@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [main]
 
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
 jobs:
   lint-and-test:
     name: Rust & TypeScript Verification
@@ -13,6 +17,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -23,6 +29,19 @@ jobs:
         uses: pnpm/action-setup@v4
         with:
           version: 9
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
 
       - name: Verify code formatting
         run: cargo fmt --check
@@ -39,8 +58,91 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Run Gitleaks Secret Scanner
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build:
+    name: Build Binaries
+    runs-on: ubuntu-latest
+    needs: [lint-and-test, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Build release binary
+        run: cargo build --release --bin hitechcloud
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hitechcloud-linux-amd64
+          path: target/release/hitechcloud
+          retention-days: 7
+
+  auto-commit:
+    name: Auto Commit with Agent Attribution
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+
+      - name: Configure Git User
+        run: |
+          # Lấy GitHub user từ actor (người push)
+          GIT_ACTOR="${{ github.actor }}"
+          GIT_EMAIL="${{ github.actor }}@users.noreply.github.com"
+          
+          git config user.name "$GIT_ACTOR"
+          git config user.email "$GIT_EMAIL"
+          
+          echo "Git configured for: $GIT_ACTOR <$GIT_EMAIL>"
+
+      - name: Check for uncommitted changes
+        id: check_changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Commit and push changes
+        if: steps.check_changes.outputs.has_changes == 'true'
+        run: |
+          git add -A
+          git commit -m "chore(ci): auto-sync with agent attribution
+
+          Co-Authored-By: ${{ github.actor }} <${{ github.actor }}@users.noreply.github.com>
+          Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>"
+          git push

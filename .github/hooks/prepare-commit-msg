@@ -1,17 +1,51 @@
 #!/usr/bin/env bash
 # Git prepare-commit-msg hook
-# Đảm bảo luôn tự động bổ sung Co-Authored-By nếu chưa có
+# Tự động bổ sung Co-Authored-By cho GitHub user hiện tại và HiTechCloud Agent
 
 COMMIT_MSG_FILE=$1
 COMMIT_SOURCE=$2
 SHA1=$3
 
-CO_AUTHOR="Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>"
+AGENT_CO_AUTHOR="Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>"
+
+# Lấy GitHub user hiện tại từ gh CLI hoặc git config
+GITHUB_USER=""
+GITHUB_EMAIL=""
+
+if command -v gh &> /dev/null; then
+    GITHUB_USER=$(gh api user --jq '.login' 2>/dev/null)
+    GITHUB_EMAIL=$(gh api user --jq '.email' 2>/dev/null)
+fi
+
+# Fallback về git config nếu không lấy được từ gh
+if [ -z "$GITHUB_USER" ]; then
+    GITHUB_USER=$(git config user.name 2>/dev/null)
+fi
+if [ -z "$GITHUB_EMAIL" ]; then
+    GITHUB_EMAIL=$(git config user.email 2>/dev/null)
+fi
+
+# Tạo Co-Authored-By cho GitHub user
+USER_CO_AUTHOR=""
+if [ -n "$GITHUB_USER" ]; then
+    if [ -n "$GITHUB_EMAIL" ] && [ "$GITHUB_EMAIL" != "null" ]; then
+        USER_CO_AUTHOR="Co-Authored-By: ${GITHUB_USER} <${GITHUB_EMAIL}>"
+    else
+        USER_CO_AUTHOR="Co-Authored-By: ${GITHUB_USER}"
+    fi
+fi
 
 if [ -f "$COMMIT_MSG_FILE" ]; then
+    # Thêm Co-Authored-By cho GitHub user (nếu chưa có)
+    if [ -n "$USER_CO_AUTHOR" ]; then
+        if ! grep -q "Co-Authored-By:.*${GITHUB_USER}" "$COMMIT_MSG_FILE"; then
+            echo "" >> "$COMMIT_MSG_FILE"
+            echo "$USER_CO_AUTHOR" >> "$COMMIT_MSG_FILE"
+        fi
+    fi
+
+    # Thêm Co-Authored-By cho Agent (nếu chưa có)
     if ! grep -q "Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>" "$COMMIT_MSG_FILE"; then
-        # Thêm một dòng trống và Co-Authored-By vào cuối commit
-        echo "" >> "$COMMIT_MSG_FILE"
-        echo "$CO_AUTHOR" >> "$COMMIT_MSG_FILE"
+        echo "$AGENT_CO_AUTHOR" >> "$COMMIT_MSG_FILE"
     fi
 fi
