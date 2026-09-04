@@ -1,0 +1,131 @@
+//! Agent implementation with ReAct loop
+
+use hitechcloud_core::{Message, Role, AgentStatus, ToolResult};
+use hitechcloud_provider_sdk::Provider;
+use std::sync::Arc;
+
+/// Agent error type
+#[derive(Debug, thiserror::Error)]
+pub enum AgentError {
+    #[error("Provider error: {0}")]
+    Provider(String),
+
+    #[error("Tool execution error: {0}")]
+    ToolExecution(String),
+
+    #[error("Max iterations reached")]
+    MaxIterationsReached,
+
+    #[error("Cancelled by user")]
+    Cancelled,
+
+    #[error("Internal error: {0}")]
+    Internal(String),
+}
+
+/// Result type for agent operations
+pub type AgentResult<T> = std::result::Result<T, AgentError>;
+
+/// Agent configuration
+#[derive(Debug, Clone)]
+pub struct AgentConfig {
+    pub max_iterations: usize,
+    pub max_tokens: Option<u32>,
+    pub temperature: Option<f32>,
+    pub streaming: bool,
+}
+
+impl Default for AgentConfig {
+    fn default() -> Self {
+        Self {
+            max_iterations: 10,
+            max_tokens: Some(4096),
+            temperature: Some(0.7),
+            streaming: true,
+        }
+    }
+}
+
+/// The main Agent struct implementing ReAct loop
+pub struct Agent {
+    config: AgentConfig,
+    provider: Arc<dyn Provider>,
+    messages: Vec<Message>,
+    status: AgentStatus,
+}
+
+impl Agent {
+    /// Create a new Agent
+    pub fn new(provider: Arc<dyn Provider>, config: AgentConfig) -> Self {
+        Self {
+            config,
+            provider,
+            messages: Vec::new(),
+            status: AgentStatus::Idle,
+        }
+    }
+
+    /// Get current agent status
+    pub fn status(&self) -> &AgentStatus {
+        &self.status
+    }
+
+    /// Get message history
+    pub fn messages(&self) -> &[Message] {
+        &self.messages
+    }
+
+    /// Add a system message
+    pub fn set_system_message(&mut self, content: impl Into<String>) {
+        self.messages.insert(0, Message::system(content));
+    }
+
+    /// Run the agent with a user message
+    pub async fn run(&mut self, user_message: impl Into<String>) -> AgentResult<String> {
+        self.messages.push(Message::user(user_message));
+        self.status = AgentStatus::Thinking;
+
+        for iteration in 0..self.config.max_iterations {
+            tracing::debug!("Agent iteration {}", iteration + 1);
+
+            let request = hitechcloud_core::ProviderRequest {
+                model: self.provider.name().to_string(),
+                messages: self.messages.clone(),
+                tools: None,
+                max_tokens: self.config.max_tokens,
+                temperature: self.config.temperature,
+                stream: self.config.streaming,
+            };
+
+            let response = self
+                .provider
+                .complete(request)
+                .await
+                .map_err(|e| AgentError::Provider(e.to_string()))?;
+
+            self.messages.push(response.message.clone());
+
+            // Check if we have tool calls to execute
+            if let Some(tool_calls) = &response.message.tool_calls {
+                self.status = AgentStatus::ExecutingTool;
+
+                for tool_call in tool_calls {
+                    // TODO: Execute tool calls
+                    tracing::info!("Would execute tool: {}", tool_call.function.name);
+                }
+            } else {
+                // No tool calls, we're done
+                self.status = AgentStatus::Completed;
+                return Ok(response.message.content);
+            }
+        }
+
+        self.status = AgentStatus::Failed;
+        Err(AgentError::MaxIterationsReached)
+    }
+
+    /// Cancel the agent
+    pub fn cancel(&mut self) {
+        self.status = AgentStatus::Cancelled;
+    }
+}

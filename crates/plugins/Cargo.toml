@@ -1,0 +1,15 @@
+[package]
+name = "hitechcloud-plugins"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Plugin management for HiTechCloud CLI"
+
+[dependencies]
+hitechcloud-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }

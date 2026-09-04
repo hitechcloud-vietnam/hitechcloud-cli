@@ -1,0 +1,37 @@
+[package]
+name = "hitechcloud"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "HiTechCloud CLI - AI-native coding agent platform"
+
+[[bin]]
+name = "hitechcloud"
+path = "src/main.rs"
+
+[dependencies]
+hitechcloud-core = { path = "../../crates/core" }
+hitechcloud-provider-sdk = { path = "../../crates/provider-sdk" }
+hitechcloud-provider-openai = { path = "../../crates/provider-openai" }
+hitechcloud-provider-anthropic = { path = "../../crates/provider-anthropic" }
+hitechcloud-provider-nube = { path = "../../crates/provider-nube" }
+hitechcloud-agent-runtime = { path = "../../crates/agent-runtime" }
+hitechcloud-tools = { path = "../../crates/tools" }
+hitechcloud-permissions = { path = "../../crates/permissions" }
+hitechcloud-sessions = { path = "../../crates/sessions" }
+hitechcloud-context = { path = "../../crates/context" }
+hitechcloud-skills = { path = "../../crates/skills" }
+hitechcloud-plugins = { path = "../../crates/plugins" }
+hitechcloud-mcp = { path = "../../crates/mcp" }
+hitechcloud-agents = { path = "../../crates/agents" }
+hitechcloud-agentd = { path = "../../crates/agentd" }
+hitechcloud-marketplace = { path = "../../crates/marketplace" }
+clap = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow = { workspace = true }
+toml = { workspace = true }

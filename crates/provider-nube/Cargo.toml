@@ -1,0 +1,20 @@
+[package]
+name = "hitechcloud-provider-nube"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Nube.SH gateway provider adapter for HiTechCloud CLI"
+
+[dependencies]
+hitechcloud-core = { path = "../core" }
+hitechcloud-provider-sdk = { path = "../provider-sdk" }
+hitechcloud-provider-openai = { path = "../provider-openai" }
+hitechcloud-provider-anthropic = { path = "../provider-anthropic" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+reqwest = { workspace = true }
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }

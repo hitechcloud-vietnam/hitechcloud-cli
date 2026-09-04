@@ -1,0 +1,18 @@
+[package]
+name = "hitechcloud-sessions"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Session management with SQLite storage for HiTechCloud CLI"
+
+[dependencies]
+hitechcloud-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+rusqlite = { workspace = true }

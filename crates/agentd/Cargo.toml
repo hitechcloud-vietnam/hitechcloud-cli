@@ -1,0 +1,18 @@
+[package]
+name = "hitechcloud-agentd"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Agent daemon for VS Code extension communication"
+
+[dependencies]
+hitechcloud-core = { path = "../core" }
+hitechcloud-agent-runtime = { path = "../agent-runtime" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }

@@ -1,0 +1,19 @@
+[package]
+name = "hitechcloud-agent-runtime"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Agent runtime with ReAct loop for HiTechCloud CLI"
+
+[dependencies]
+hitechcloud-core = { path = "../core" }
+hitechcloud-provider-sdk = { path = "../provider-sdk" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }

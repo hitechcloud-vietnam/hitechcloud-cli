@@ -1,0 +1,15 @@
+[package]
+name = "hitechcloud-skills"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+description = "Skill loader and parser for HiTechCloud CLI"
+
+[dependencies]
+hitechcloud-core = { path = "../core" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
