@@ -1,6 +1,6 @@
 //! Agent implementation with ReAct loop
 
-use hitechcloud_core::{Message, Role, AgentStatus, ToolResult};
+use hitechcloud_core::{Message, Role, AgentStatus, ToolResult, ToolCall, FunctionCall};
 use hitechcloud_provider_sdk::Provider;
 use std::sync::Arc;
 
@@ -33,6 +33,7 @@ pub struct AgentConfig {
     pub max_tokens: Option<u32>,
     pub temperature: Option<f32>,
     pub streaming: bool,
+    pub model: String,
 }
 
 impl Default for AgentConfig {
@@ -42,8 +43,25 @@ impl Default for AgentConfig {
             max_tokens: Some(4096),
             temperature: Some(0.7),
             streaming: true,
+            model: "gpt-4".to_string(),
         }
     }
+}
+
+/// Tool trait for executing tools
+#[async_trait::async_trait]
+pub trait Tool: Send + Sync {
+    /// Get the tool name
+    fn name(&self) -> &str;
+
+    /// Get the tool description
+    fn description(&self) -> &str;
+
+    /// Get the tool parameters schema (JSON Schema)
+    fn parameters(&self) -> serde_json::Value;
+
+    /// Execute the tool
+    async fn execute(&self, arguments: &str) -> Result<String, String>;
 }
 
 /// The main Agent struct implementing ReAct loop
@@ -52,6 +70,7 @@ pub struct Agent {
     provider: Arc<dyn Provider>,
     messages: Vec<Message>,
     status: AgentStatus,
+    tools: Vec<Arc<dyn Tool>>,
 }
 
 impl Agent {
@@ -62,7 +81,13 @@ impl Agent {
             provider,
             messages: Vec::new(),
             status: AgentStatus::Idle,
+            tools: Vec::new(),
         }
+    }
+
+    /// Add a tool to the agent
+    pub fn add_tool(&mut self, tool: Arc<dyn Tool>) {
+        self.tools.push(tool);
     }
 
     /// Get current agent status
@@ -88,10 +113,26 @@ impl Agent {
         for iteration in 0..self.config.max_iterations {
             tracing::debug!("Agent iteration {}", iteration + 1);
 
+            // Build tool definitions
+            let tool_definitions = if !self.tools.is_empty() {
+                Some(self.tools.iter().map(|tool| {
+                    hitechcloud_core::ToolDefinition {
+                        tool_type: "function".to_string(),
+                        function: hitechcloud_core::FunctionDefinition {
+                            name: tool.name().to_string(),
+                            description: tool.description().to_string(),
+                            parameters: tool.parameters(),
+                        },
+                    }
+                }).collect())
+            } else {
+                None
+            };
+
             let request = hitechcloud_core::ProviderRequest {
-                model: self.provider.name().to_string(),
+                model: self.config.model.clone(),
                 messages: self.messages.clone(),
-                tools: None,
+                tools: tool_definitions,
                 max_tokens: self.config.max_tokens,
                 temperature: self.config.temperature,
                 stream: self.config.streaming,
@@ -110,8 +151,12 @@ impl Agent {
                 self.status = AgentStatus::ExecutingTool;
 
                 for tool_call in tool_calls {
-                    // TODO: Execute tool calls
-                    tracing::info!("Would execute tool: {}", tool_call.function.name);
+                    let result = self.execute_tool(tool_call).await;
+                    let tool_message = match result {
+                        Ok(content) => Message::tool(&tool_call.id, content),
+                        Err(e) => Message::tool(&tool_call.id, format!("Error: {}", e)),
+                    };
+                    self.messages.push(tool_message);
                 }
             } else {
                 // No tool calls, we're done
@@ -122,6 +167,23 @@ impl Agent {
 
         self.status = AgentStatus::Failed;
         Err(AgentError::MaxIterationsReached)
+    }
+
+    /// Execute a tool call
+    async fn execute_tool(&self, tool_call: &ToolCall) -> Result<String, AgentError> {
+        let tool = self.tools.iter().find(|t| t.name() == tool_call.function.name);
+
+        match tool {
+            Some(tool) => {
+                tool.execute(&tool_call.function.arguments)
+                    .await
+                    .map_err(|e| AgentError::ToolExecution(e))
+            }
+            None => Err(AgentError::ToolExecution(format!(
+                "Tool not found: {}",
+                tool_call.function.name
+            ))),
+        }
     }
 
     /// Cancel the agent
