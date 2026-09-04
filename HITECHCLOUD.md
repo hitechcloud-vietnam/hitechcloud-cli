@@ -8,6 +8,17 @@ HiTechCloud CLI is an enterprise-grade AI coding agent platform following the **
 2. **Provider Agnostic**: Native support for Nube.SH (`ai.nube-api.com`), OpenAI-compatible, Anthropic-compatible, and local models.
 3. **Zero-Trust Security**: SafeLine WAF (`vcwaf.hitechcloud.vn`) origin protection, secret redactor, auto-safe permission gate.
 
+## Git & Commit Guidelines (Bắt Buộc)
+Mỗi commit trong repository này (dù do developer hay Agent tạo ra) **bắt buộc phải có dòng Co-Authored-By** ở cuối thông điệp commit:
+
+```gitcommit
+<type>(<scope>): <mô tả ngắn gọn>
+
+<chi tiết thay đổi nếu có>
+
+Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>
+```
+
 ## Build & Test Commands
 - Run Cargo checks: `cargo check --workspace`
 - Run Unit tests: `cargo test --workspace`

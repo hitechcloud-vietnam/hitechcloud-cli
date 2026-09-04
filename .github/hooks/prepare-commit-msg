@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Git prepare-commit-msg hook
+# Đảm bảo luôn tự động bổ sung Co-Authored-By nếu chưa có
+
+COMMIT_MSG_FILE=$1
+COMMIT_SOURCE=$2
+SHA1=$3
+
+CO_AUTHOR="Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>"
+
+if [ -f "$COMMIT_MSG_FILE" ]; then
+    if ! grep -q "Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>" "$COMMIT_MSG_FILE"; then
+        # Thêm một dòng trống và Co-Authored-By vào cuối commit
+        echo "" >> "$COMMIT_MSG_FILE"
+        echo "$CO_AUTHOR" >> "$COMMIT_MSG_FILE"
+    fi
+fi

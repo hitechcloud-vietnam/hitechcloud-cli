@@ -1,0 +1,8 @@
+# Format commit message chuẩn:
+# <type>(<scope>): <subject>
+#
+# <body>
+#
+# Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>
+
+Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>

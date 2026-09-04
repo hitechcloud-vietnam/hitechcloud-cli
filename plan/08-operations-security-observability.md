@@ -99,6 +99,13 @@ Hệ thống được bảo đảm chất lượng thông qua 4 cấp độ ki�
 - Kiểm thử cơ chế Circuit Breaker: Giả lập tool lỗi lặp vô hạn và xác nhận agent tự động ngắt sau 4 lần lặp.
 - Kiểm thử cơ chế Crash Recovery: Sử dụng SIGKILL ngắt tiến trình giữa chừng và chạy lại `hitechcloud session resume` để xác nhận toàn vẹn dữ liệu.
 
+### 3.4 Quy Chuẩn Commit & Đồng Hành Cùng Agent (Co-Authored-By Policy):
+- Mọi commit mã nguồn vào hệ thống (thông qua CLI Git Tool hoặc dev thủ công) bắt buộc gắn kèm metadata đồng tác giả:
+  ```gitcommit
+  Co-Authored-By: HiTechCloud Agents <agent@hitechcloud.vn>
+  ```
+- Được tự động kích hoạt thông qua git hook `.github/hooks/prepare-commit-msg` và commit template `.github/git-commit-template.txt`.
+
 ---
 
 ## 4. Kiểm Toán Bảo Mật Chuyên Sâu (Security Hardening)
