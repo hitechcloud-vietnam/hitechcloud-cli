@@ -1,7 +1,7 @@
 //! Anthropic Claude provider implementation
 
 use async_trait::async_trait;
-use hitechcloud_core::{ProviderRequest, ProviderResponse, StreamEvent};
+use hitechcloud_core::{ProviderRequest, ProviderResponse, StreamEvent, Message, Role, Usage};
 use hitechcloud_provider_sdk::{Provider, ProviderError, ProviderResult, ResponseStream};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -87,7 +87,7 @@ impl AnthropicProvider {
 
         for msg in request.messages {
             match msg.role {
-                hitechcloud_core::Role::System => {
+                Role::System => {
                     system = Some(msg.content);
                 }
                 _ => {
@@ -130,9 +130,9 @@ impl AnthropicProvider {
             .collect::<Vec<_>>()
             .join("");
 
-        let message = hitechcloud_core::Message {
+        let message = Message {
             id: response.id.clone(),
-            role: hitechcloud_core::Role::Assistant,
+            role: Role::Assistant,
             content,
             tool_calls: None,
             tool_call_id: None,
@@ -143,7 +143,7 @@ impl AnthropicProvider {
             id: response.id,
             model: response.model,
             message,
-            usage: hitechcloud_core::Usage {
+            usage: Usage {
                 prompt_tokens: response.usage.input_tokens,
                 completion_tokens: response.usage.output_tokens,
                 total_tokens: response.usage.input_tokens + response.usage.output_tokens,

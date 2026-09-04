@@ -1,7 +1,7 @@
 //! OpenAI-compatible provider implementation
 
 use async_trait::async_trait;
-use hitechcloud_core::{ProviderRequest, ProviderResponse, StreamEvent};
+use hitechcloud_core::{ProviderRequest, ProviderResponse, StreamEvent, Message, Role, Usage};
 use hitechcloud_provider_sdk::{Provider, ProviderError, ProviderResult, ResponseStream};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
@@ -34,7 +34,7 @@ struct OpenAIRequest {
 #[derive(Debug, Serialize, Deserialize)]
 struct OpenAIMessage {
     role: String,
-    content: String,
+    content: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     tool_calls: Option<Vec<serde_json::Value>>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -89,7 +89,7 @@ impl OpenAIProvider {
             .into_iter()
             .map(|msg| OpenAIMessage {
                 role: format!("{:?}", msg.role).to_lowercase(),
-                content: msg.content,
+                content: Some(msg.content),
                 tool_calls: msg.tool_calls.map(|tc| {
                     tc.into_iter()
                         .map(|call| serde_json::json!({
@@ -133,16 +133,16 @@ impl OpenAIProvider {
     /// Convert OpenAI response to HiTechCloud format
     fn convert_response(&self, response: OpenAIResponse, model: &str) -> ProviderResponse {
         let choice = response.choices.into_iter().next().unwrap();
-        let message = hitechcloud_core::Message {
+        let message = Message {
             id: response.id.clone(),
             role: match choice.message.role.as_str() {
-                "assistant" => hitechcloud_core::Role::Assistant,
-                "user" => hitechcloud_core::Role::User,
-                "system" => hitechcloud_core::Role::System,
-                "tool" => hitechcloud_core::Role::Tool,
-                _ => hitechcloud_core::Role::Assistant,
+                "assistant" => Role::Assistant,
+                "user" => Role::User,
+                "system" => Role::System,
+                "tool" => Role::Tool,
+                _ => Role::Assistant,
             },
-            content: choice.message.content,
+            content: choice.message.content.unwrap_or_default(),
             tool_calls: None,
             tool_call_id: choice.message.tool_call_id,
             timestamp: chrono::Utc::now(),
@@ -152,7 +152,7 @@ impl OpenAIProvider {
             id: response.id,
             model: model.to_string(),
             message,
-            usage: hitechcloud_core::Usage {
+            usage: Usage {
                 prompt_tokens: response.usage.prompt_tokens,
                 completion_tokens: response.usage.completion_tokens,
                 total_tokens: response.usage.total_tokens,
