@@ -23,7 +23,7 @@ resolver = "2"
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-authors = ["HiTechCloud Team <dev@hitechcloud.vn>"]
+authors = ["HiTechCloud Team <agent@hitechcloud.vn>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/hitechcloud/hitechcloud-cli"
 homepage = "https://cli.hitechcloud.vn"
