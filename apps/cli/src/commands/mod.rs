@@ -2,6 +2,7 @@
 
 pub mod interactive;
 pub mod run;
+pub mod init;
 pub mod session;
 pub mod config;
 pub mod skills;

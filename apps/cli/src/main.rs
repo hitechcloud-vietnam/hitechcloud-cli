@@ -56,6 +56,9 @@ enum Commands {
         provider: Option<String>,
     },
 
+    /// Initialize HiTechCloud configuration
+    Init,
+
     /// Manage sessions
     Session {
         #[command(subcommand)]
@@ -106,6 +109,9 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("HiTechCloud CLI v{}", env!("CARGO_PKG_VERSION"));
 
+    // Initialize directories
+    hitechcloud_core::HiTechCloudConfig::init_dirs()?;
+
     // Load configuration
     let config = hitechcloud_core::HiTechCloudConfig::load()?;
 
@@ -115,6 +121,9 @@ async fn main() -> anyhow::Result<()> {
         }
         Commands::Run { prompt, model, provider } => {
             commands::run::run(prompt, model, provider, &config).await?;
+        }
+        Commands::Init => {
+            commands::init::run(&config)?;
         }
         Commands::Session { action } => {
             commands::session::handle(action, &config).await?;

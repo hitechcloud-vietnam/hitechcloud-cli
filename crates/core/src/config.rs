@@ -113,7 +113,32 @@ impl Default for HiTechCloudConfig {
         Self {
             default_provider: Some("nube".to_string()),
             default_model: Some("gpt-4".to_string()),
-            providers: vec![],
+            providers: vec![
+                ProviderConfig {
+                    name: "nube".to_string(),
+                    provider_type: "nube-gateway".to_string(),
+                    endpoint: "https://ai.nube-api.com".to_string(),
+                    api_key: std::env::var("NUBE_API_KEY").ok(),
+                    default_model: Some("gpt-4".to_string()),
+                    enabled: true,
+                },
+                ProviderConfig {
+                    name: "openai".to_string(),
+                    provider_type: "openai-compatible".to_string(),
+                    endpoint: "https://api.openai.com".to_string(),
+                    api_key: std::env::var("OPENAI_API_KEY").ok(),
+                    default_model: Some("gpt-4".to_string()),
+                    enabled: true,
+                },
+                ProviderConfig {
+                    name: "anthropic".to_string(),
+                    provider_type: "anthropic-compatible".to_string(),
+                    endpoint: "https://api.anthropic.com".to_string(),
+                    api_key: std::env::var("ANTHROPIC_API_KEY").ok(),
+                    default_model: Some("claude-3-sonnet-20240229".to_string()),
+                    enabled: true,
+                },
+            ],
             agent: AgentConfig::default(),
             session: SessionConfig::default(),
             permissions: PermissionConfig::default(),
@@ -222,5 +247,41 @@ impl HiTechCloudConfig {
         self.default_provider
             .as_ref()
             .and_then(|name| self.get_provider(name))
+    }
+
+    /// Get API key for a provider (from env var or config)
+    pub fn get_api_key(&self, provider_name: &str) -> Option<String> {
+        // First check environment variables
+        let env_key = match provider_name {
+            "nube" => std::env::var("NUBE_API_KEY").ok(),
+            "openai" => std::env::var("OPENAI_API_KEY").ok(),
+            "anthropic" => std::env::var("ANTHROPIC_API_KEY").ok(),
+            _ => std::env::var(format!("{}_API_KEY", provider_name.to_uppercase())).ok(),
+        };
+
+        if let Some(key) = env_key {
+            if !key.is_empty() {
+                return Some(key);
+            }
+        }
+
+        // Then check config file
+        self.get_provider(provider_name)
+            .and_then(|p| p.api_key.clone())
+            .filter(|k| !k.is_empty())
+    }
+
+    /// Initialize the hitechcloud directory structure
+    pub fn init_dirs() -> crate::Result<()> {
+        let home = dirs::home_dir().unwrap_or_else(|| PathBuf::from("."));
+        let hitechcloud_dir = home.join(".hitechcloud");
+
+        std::fs::create_dir_all(&hitechcloud_dir)?;
+        std::fs::create_dir_all(hitechcloud_dir.join("sessions"))?;
+        std::fs::create_dir_all(hitechcloud_dir.join("skills"))?;
+        std::fs::create_dir_all(hitechcloud_dir.join("plugins"))?;
+        std::fs::create_dir_all(hitechcloud_dir.join("logs"))?;
+
+        Ok(())
     }
 }
