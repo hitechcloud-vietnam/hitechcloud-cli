@@ -1,0 +1,47 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Rust target
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Node / JS
+node_modules/
+dist/
+out/
+*.vsix
+.pnpm-store/
+
+# Environment and Secrets (CRITICAL SECURITY)
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.cert
+credentials.json
+~/.hitechcloud/
+
+# OS and Editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+
+# Logs and SQLite
+*.log
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+logs/
+cache/
+tmp/

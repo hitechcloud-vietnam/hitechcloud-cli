@@ -1,0 +1,52 @@
+[workspace]
+members = [
+    "apps/cli",
+    "crates/core",
+    "crates/agent-runtime",
+    "crates/provider-sdk",
+    "crates/provider-nube",
+    "crates/provider-openai",
+    "crates/provider-anthropic",
+    "crates/context",
+    "crates/tools",
+    "crates/permissions",
+    "crates/sessions",
+    "crates/skills",
+    "crates/plugins",
+    "crates/mcp",
+    "crates/agents",
+    "crates/agentd",
+    "crates/marketplace",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["HiTechCloud Team <dev@hitechcloud.vn>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/hitechcloud/hitechcloud-cli"
+homepage = "https://cli.hitechcloud.vn"
+readme = "README.md"
+keywords = ["ai", "agent", "coding-agent", "cli", "mcp"]
+
+[workspace.dependencies]
+tokio = { version = "1.40", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+toml = "0.8"
+async-trait = "0.1"
+thiserror = "2.0"
+anyhow = "1.0"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+reqwest = { version = "0.12", features = ["json", "stream"] }
+eventsource-stream = "0.2"
+futures = "0.3"
+rusqlite = { version = "0.32", features = ["bundled"] }
+uuid = { version = "1.10", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+regex = "1.10"
+clap = { version = "4.5", features = ["derive", "env"] }
+ratatui = "0.28"
+crossterm = "0.28"
